@@ -1,25 +1,96 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Course Project 1
+Armin Najarpour Foroushani
 
+## Load the data
+```{r Load,echo=TRUE}
+setwd("C:/To do/R/Reproducible Research/Course Project 1")
+activity<-read.csv("activity.csv",header=TRUE)
+head(activity)
+dim(activity)
+```
 
-## Loading and preprocessing the data
+## Mean total number of steps taken per day
+1. Calculate the total number of steps taken per day
+```{r Steps_per_day,echo=TRUE}
+SPD <- as.data.frame.table(tapply(activity$steps,list(activity$date),sum,na.rm=TRUE))
+names(SPD)<-c("Day","Total_Steps")
+head(SPD)
+```
+2. Make a histogram of the total number of steps taken each day
+```{r Hist_steps_per_day,echo=TRUE}
+hist(SPD$Total_Steps,col="green",xlab = "Total number of steps per day",ylab = "Freq",main = "Histogram of total number of steps per day")
+rug(SPD$Total_Steps)
+```
 
+3. Calculate and report the mean and median of the total number of steps taken per day
+```{r MeanMedian_steps_per_day,echo=TRUE}
+cat("Mean SPD",mean(SPD$Total_Steps))
+cat("Median SPD",median(SPD$Total_Steps))
+```
 
+## The average daily activity pattern
+1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+```{r Time_series_ave_steps,echo=TRUE}
+SPI <- as.data.frame.table(tapply(activity$steps,list(activity$interval),mean,na.rm=TRUE))
+names(SPI)<-c("Interval","Mean_Steps")
 
-## What is mean total number of steps taken per day?
+library(ggplot2)
+ggplot(data=SPI, aes(x=Interval, y=Mean_Steps, group=1)) + geom_line(linetype = "solid",colour = "blue") + scale_x_discrete(breaks = round(seq(0, 2355, by = 500),1)) + labs(x = "Interval", y = "Number of Steps")
+```
 
-
-
-## What is the average daily activity pattern?
-
-
+2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+```{r Max_steps_interval,echo=TRUE}
+cat("Max 5-min interval:",which.max(SPI$Mean_Steps))
+```
 
 ## Imputing missing values
+1. Calculate and report the total number of missing values in the dataset
+```{r Total_NA,echo=TRUE}
+cat("Total number of NAs in steps",sum(is.na(activity$steps)))
+cat("Percentage of NAs in steps",mean(is.na(activity$steps)))
+```
+2. Devise a strategy for filling in all of the missing values in the dataset. 
 
+We used the mean for that 5-minute interval.
 
+3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
+```{r Fill_NA_dataset,echo=TRUE}
+NaFill_activity <- activity
+for (val in which(is.na(NaFill_activity$steps))){
+        interval_val = NaFill_activity$interval[val]
+        NaFill_activity$steps[val] = SPI$Mean_Steps[SPI$Interval == interval_val]
+}
+```
+4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+```{r MeanMedian_fill_NA_dataset,echo=TRUE}
+NaFill_SPD <- as.data.frame.table(tapply(NaFill_activity$steps,list(NaFill_activity$date),sum,na.rm=TRUE))
+names(NaFill_SPD)<-c("Day","Total_Steps")
+head(NaFill_SPD)
+
+hist(NaFill_SPD$Total_Steps,col="green",xlab = "Total number of steps per day",ylab = "Freq",main = "Histogram of total number of steps per day after imputation")
+rug(NaFill_SPD$Total_Steps)
+
+cat("Mean SPD",mean(NaFill_SPD$Total_Steps))
+cat("Median SPD",median(NaFill_SPD$Total_Steps))
+```
+Imputing missing values increased both the mean and median of the total number of steps taken each day. 
+It pushes the values to the mean and the resulting histogram will be closer to the normal distribution.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+1. Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+```{r weekdays,echo=TRUE}
+weekdays_vec <- c('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')
+dated_weekdays <- weekdays(as.Date(as.character(NaFill_activity$date)))
+
+NaFill_activity$wDay <- factor((dated_weekdays %in% weekdays_vec), levels=c(FALSE, TRUE), labels=c('weekend','weekday'))
+
+head(NaFill_activity$wDay)
+```
+
+2. Make a panel plot containing a time series plot (i.e. type="l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
+```{r Time_series_ave_steps_weekday,echo=TRUE}
+SPI_Na <- as.data.frame.table(tapply(NaFill_activity$steps,list(NaFill_activity$interval,NaFill_activity$wDay),mean,na.rm=TRUE))
+names(SPI_Na)<-c("Interval","wDay","Mean_Steps")
+
+ggplot(data=SPI_Na, aes(x=Interval, y=Mean_Steps, group=1)) + geom_line(linetype = "solid",colour = "blue") + scale_x_discrete(breaks = round(seq(0, 2355, by = 500),1)) + labs(x = "Interval", y = "Number of Steps") + facet_grid(wDay ~ .)
+```
