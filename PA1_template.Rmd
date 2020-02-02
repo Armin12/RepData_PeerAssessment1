@@ -1,7 +1,14 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
 # Course Project 1
 Armin Najarpour Foroushani
 
-## Load the data
+## Loading and preprocessing the data
 ```{r Load,echo=TRUE}
 setwd("C:/To do/R/Reproducible Research/Course Project 1")
 activity<-read.csv("activity.csv",header=TRUE)
@@ -9,7 +16,7 @@ head(activity)
 dim(activity)
 ```
 
-## Mean total number of steps taken per day
+## What is mean total number of steps taken per day?
 1. Calculate the total number of steps taken per day
 ```{r Steps_per_day,echo=TRUE}
 SPD <- as.data.frame.table(tapply(activity$steps,list(activity$date),sum,na.rm=TRUE))
@@ -28,7 +35,7 @@ cat("Mean SPD",mean(SPD$Total_Steps))
 cat("Median SPD",median(SPD$Total_Steps))
 ```
 
-## The average daily activity pattern
+## What is the average daily activity pattern?
 1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 ```{r Time_series_ave_steps,echo=TRUE}
 SPI <- as.data.frame.table(tapply(activity$steps,list(activity$interval),mean,na.rm=TRUE))
